@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Onboarding Control Tower</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <img src="img/rhg-logojpg.jpg" alt="Radisson Hotel Group" class="brand-logo">
+      <span class="brand-divider"></span>
+      <div>
+        <h1>Onboarding Control Tower</h1>
+        <p class="brand-sub">Track every hotel from first contact to go-live</p>
+      </div>
+    </div>
+    <nav class="navbar">
+      <a href="index.html" class="nav-link active">Hotels</a>
+      <a href="submissions.html" class="nav-link">Form Submissions</a>
+    </nav>
+  </div>
+</header>
+
+<main class="layout">
+  <section class="panel panel--form">
+    <h2>Add a hotel</h2>
+    <form id="add-hotel-form">
+      <label>SITA code
+        <input type="text" id="sita" required>
+      </label>
+      <label>Hotel name
+        <input type="text" id="hotel_name" required>
+      </label>
+      <label>Opening date
+        <input type="date" id="opening_date">
+      </label>
+      <button type="submit">Add hotel</button>
+    </form>
+  </section>
+
+  <section class="panel panel--list">
+  <div class="panel-header">
+    <div class="panel-header__title">
+      <h2>Hotels</h2>
+      <span class="count-pill" id="hotel-count">0</span>
+    </div>
+
+    <div class="panel-header__filters">
+      <label class="filter-field">
+        <span>Status</span>
+        <select id="status-filter">
+          <option value="in_progress">In progress</option>
+          <option value="opening_soon">Opening soon (≤30 days)</option>
+          <option value="overdue">Overdue</option>
+          <option value="completed">Completed</option>
+          <option value="all">All</option>
+        </select>
+      </label>
+
+      <label class="filter-field">
+        <span>Sort</span>
+        <select id="sort-order">
+          <option value="asc">Opening: soonest first</option>
+          <option value="desc">Opening: latest first</option>
+        </select>
+      </label>
+
+      <button type="button" id="clear-filters">Clear</button>
+    </div>
+  </div>
+  <div id="hotels-body" class="hotel-list"></div>
+  </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

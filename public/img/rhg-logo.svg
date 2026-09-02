@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 200" role="img" aria-label="Radisson Hotel Group">
+  <title>Radisson Hotel Group</title>
+  <g fill="#31363B" font-family="Arial, Helvetica, sans-serif">
+    <circle cx="100" cy="100" r="97"/>
+    <text x="100" y="103" text-anchor="middle" dominant-baseline="central"
+          font-weight="800" font-size="84" letter-spacing="-7" fill="#ffffff">RHG</text>
+    <text x="238" y="92" dominant-baseline="middle"
+          font-weight="400" font-size="92" letter-spacing="16">RADISSON</text>
+    <rect x="240" y="116" width="612" height="4"/>
+    <text x="242" y="170"
+          font-weight="400" font-size="41" letter-spacing="33">HOTEL GROUP</text>
+  </g>
+</svg>

@@ -1,0 +1,5 @@
+node_modules/
+.env
+
+# Real onboarding data exports — keep local, never commit
+*.xlsx

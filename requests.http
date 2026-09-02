@@ -1,0 +1,15 @@
+### Get all hotels
+GET http://localhost:3000/hotels
+
+### Create a new hotel
+POST http://localhost:3000/hotels
+Content-Type: application/json
+
+{
+  "sita": "CUCBA",
+  "hotel_name": "Test Hotel",
+  "opening_date": "2026-08-01"
+}
+
+### Preview GM reminder email
+GET http://localhost:3000/hotels/1/email-preview/gm_reminder

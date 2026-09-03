@@ -639,6 +639,139 @@ body {
 }
 .sub-field dd a { color: var(--color-accent); }
 
+/* ---------- Monthly report notes ---------- */
+
+.panel-header__filters input[type="month"] {
+  border: 1px solid var(--color-line);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--color-ink);
+  background: var(--color-surface);
+}
+
+#copy-report {
+  background: var(--color-accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+#copy-report:hover { background: var(--color-accent-hover); }
+
+#copy-status { margin: 12px 0 0; }
+
+.mn-add form { max-width: 520px; }
+.mn-add select {
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+.mn-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.mn-fields label {
+  font-size: 0.8rem;
+  color: var(--color-ink-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mn-fields input,
+.mn-fields textarea {
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  resize: vertical;
+}
+.mn-fields input:focus,
+.mn-fields textarea:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.mn-groups { display: flex; flex-direction: column; gap: 22px; }
+.mn-group h3 {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-ink-soft);
+  margin: 0 0 8px;
+}
+.mn-group__count {
+  background: var(--color-bg);
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 0.7rem;
+  color: var(--color-ink-soft);
+}
+
+.mn-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.mn-note {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--color-surface);
+}
+.mn-note__text { font-size: 0.88rem; word-break: break-word; }
+.mn-note__actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.mn-auto {
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #175CD3;
+  background: #EFF8FF;
+  border-radius: 999px;
+  padding: 2px 7px;
+}
+.mn-edit-btn, .mn-del-btn, .mn-cancel {
+  background: none;
+  border: 1px solid var(--color-line);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--color-ink);
+}
+.mn-edit-btn:hover, .mn-cancel:hover { border-color: var(--color-accent); color: var(--color-accent); }
+.mn-del-btn { color: #B42318; border-color: #F1C0C4; }
+.mn-del-btn:hover { background: #FEF3F2; border-color: #B42318; }
+
+.mn-note--editing { flex-direction: column; background: #FAFBFC; }
+.mn-edit { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+.mn-edit__actions { display: flex; gap: 8px; }
+.mn-edit__actions button[type="submit"] {
+  background: var(--color-accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-weight: 600;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.mn-edit__actions button[type="submit"]:hover { background: var(--color-accent-hover); }
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 760px) {

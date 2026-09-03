@@ -9,6 +9,7 @@ const {EMAIL_TEMPLATES, fillTemplate} = require('./email_templates');
 const {ONBOARDING_STEPS, STEP_KEYS} = require('./steps');
 const {importSubmissions} = require('./submissions_import');
 const importStatus = require('./import_status');
+const monthlyNotes = require('./monthly_notes');
 
 // Validated set of column names PATCH /hotels/:id/step may touch. The step name
 // is interpolated into SQL below, so this allowlist is what keeps that safe —
@@ -22,6 +23,13 @@ const upload = multer({
 
 app.use(express.static('public'));
 app.use(express.json());
+
+// Monthly report notes (see server/monthly_notes.js). The table is created on
+// startup so a fresh machine doesn't need an extra setup step.
+app.use(monthlyNotes.router);
+monthlyNotes.ensureTable().catch((err) => {
+  console.error('[monthly-notes] could not create the monthly_notes table:', err);
+});
 
 // Lets the frontend render the checklist without keeping its own copy of the list
 app.get('/config/steps', (req, res) => {
@@ -69,6 +77,13 @@ app.patch('/hotels/:id', async (req, res) => {
   }
 
   try{
+    // Grab the current row first so we can spot SITA / name changes and log them
+    // to the monthly report notes.
+    const existing = await pool.query('SELECT * FROM hotels WHERE id = $1', [id]);
+    if(existing.rows.length === 0){
+      return res.status(404).json({error: 'Hotel not found'});
+    }
+
     const result = await pool.query(
       `UPDATE hotels
          SET sita = $1, hotel_name = $2, opening_date = $3
@@ -77,9 +92,7 @@ app.patch('/hotels/:id', async (req, res) => {
       [sita, hotel_name, opening_date || null, id]
     );
 
-    if(result.rows.length === 0){
-      return res.status(404).json({error: 'Hotel not found'});
-    }
+    await monthlyNotes.recordHotelEdit(existing.rows[0], result.rows[0]);
 
     res.json(result.rows[0]);
   } catch (err){
@@ -120,6 +133,11 @@ app.patch('/hotels/:id/step', async (req, res) => {
 
     if(result.rows.length === 0){
       return res.status(404).json({error: 'Hotel not found'});
+    }
+
+    // Ticking "Added to monthly report" logs the hotel as onboarded for this month.
+    if(step === 'added_to_monthly_report' && value){
+      await monthlyNotes.recordOnboarding(result.rows[0]);
     }
 
     res.json(result.rows[0]);

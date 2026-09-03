@@ -142,6 +142,26 @@ CREATE TABLE form_submissions (
 
 > Note: `sita_code` has a `UNIQUE` constraint — re-uploading a file with the same SITA code updates that hotel's row instead of duplicating it. `star_rating` is `TEXT` (not a short `VARCHAR`) because real submissions sometimes contain full sentences instead of a simple rating.
 
+There is also a `monthly_notes` table behind the **Monthly Report** page. You don't
+need to create it by hand — the server runs `CREATE TABLE IF NOT EXISTS` for it on
+startup. For reference, its shape is:
+
+```sql
+CREATE TABLE monthly_notes (
+  id             SERIAL PRIMARY KEY,
+  report_month   DATE NOT NULL,                 -- always the 1st of the month
+  kind           VARCHAR(30) NOT NULL,          -- onboarding | rebranding | sita_change | name_change | other
+  hotel_id       INTEGER REFERENCES hotels(id) ON DELETE SET NULL,
+  sita           VARCHAR(50),
+  hotel_name     VARCHAR(255),
+  old_value      TEXT,
+  new_value      TEXT,
+  note           TEXT,
+  auto_generated BOOLEAN DEFAULT FALSE,
+  created_at     TIMESTAMP DEFAULT NOW()
+);
+```
+
 ### Step 4: Recreate the `.env` file
 In the project root, create a file named `.env`:
 
@@ -227,6 +247,7 @@ hotel-onboarding-app/
 │   ├── index.js              → Express app + all API routes
 │   ├── db.js                 → PostgreSQL connection pool
 │   ├── steps.js              → single source of truth for the onboarding checklist
+│   ├── monthly_notes.js      → Monthly Report notes: table + CRUD routes + auto-capture of SITA/name changes
 │   ├── submissions_import.js → parse an .xlsx export + upsert into form_submissions
 │   ├── watch_submissions.js  → watch SUBMISSIONS_XLSX_PATH and auto-import on change
 │   ├── import_status.js      → remembers the last import outcome (for the status line)
@@ -234,9 +255,11 @@ hotel-onboarding-app/
 ├── public/
 │   ├── index.html            → Hotels page (tracker, progress rings, email generator)
 │   ├── submissions.html      → Form Submissions page (upload + full data table)
-│   ├── style.css              → shared styling for both pages
+│   ├── monthly.html          → Monthly Report page (per-month notes + "Copy for report")
+│   ├── style.css              → shared styling for all pages
 │   ├── app.js                 → Hotels page logic
-│   └── submissions.js         → Form Submissions page logic
+│   ├── submissions.js         → Form Submissions page logic
+│   └── monthly.js             → Monthly Report page logic
 ├── requests.http               → test API requests (used with the REST Client extension)
 ├── package.json
 └── .env                        → NOT committed to Git, holds DB credentials
@@ -246,6 +269,7 @@ hotel-onboarding-app/
 
 - **Hotels** (`index.html`) — add a hotel, track its 18-step onboarding progress with a progress ring, expand a card to check off individual steps, generate a GM reminder email pre-filled with hotel data
 - **Form Submissions** (`submissions.html`) — upload an `.xlsx` export of onboarding form responses; parses and inserts/updates rows in `form_submissions`, then displays every column in a scrollable table
+- **Monthly Report** (`monthly.html`) — the running notes for each month's report: onboarded hotels, rebrandings, SITA-code changes, name changes and free-text "extra updates". Pick a month, add/edit/delete notes grouped by type, and hit **Copy for report** to put the whole month on the clipboard as formatted text. Editing a hotel's SITA or name on the Hotels page, or ticking its "Added to monthly report" step, files a note here automatically for the current month (shown with an **auto** tag; still editable).
 
 ## API routes
 
@@ -260,6 +284,12 @@ hotel-onboarding-app/
 | GET | `/form-submissions` | List all imported form submissions |
 | GET | `/form-submissions/status` | Outcome of the most recent import (manual or auto) |
 | POST | `/form-submissions/upload` | Upload an `.xlsx` file, parse it, and insert/update rows |
+| GET | `/monthly-notes/kinds` | The five note types + labels (for the page) |
+| GET | `/monthly-notes/months` | Months that have notes, newest first (for the month picker) |
+| GET | `/monthly-notes?month=YYYY-MM` | Notes for one month (defaults to the current month) |
+| POST | `/monthly-notes` | Add a note (`month`, `kind`, plus `sita`/`hotel_name`/`old_value`/`new_value`/`note`) |
+| PATCH | `/monthly-notes/:id` | Edit a note's fields |
+| DELETE | `/monthly-notes/:id` | Delete a note |
 
 ---
 

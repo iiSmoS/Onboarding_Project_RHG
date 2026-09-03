@@ -13,3 +13,31 @@ Content-Type: application/json
 
 ### Preview GM reminder email
 GET http://localhost:3000/hotels/1/email-preview/gm_reminder
+
+### Monthly report — notes for the current month
+GET http://localhost:3000/monthly-notes
+
+### Monthly report — notes for a specific month
+GET http://localhost:3000/monthly-notes?month=2026-08
+
+### Monthly report — add a rebranding note
+POST http://localhost:3000/monthly-notes
+Content-Type: application/json
+
+{
+  "month": "2026-08",
+  "kind": "rebranding",
+  "sita": "SAKHO1",
+  "old_value": "Park Inn by Radisson Al Khobar",
+  "new_value": "Radisson Hotel Al Khobar"
+}
+
+### Monthly report — add a free-text update
+POST http://localhost:3000/monthly-notes
+Content-Type: application/json
+
+{
+  "month": "2026-08",
+  "kind": "other",
+  "note": "Alexanderplatz switched to managed"
+}

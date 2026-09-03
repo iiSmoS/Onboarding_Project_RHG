@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monthly Report — Onboarding Control Tower</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <img src="img/rhg-logojpg.jpg" alt="Radisson Hotel Group" class="brand-logo">
+      <span class="brand-divider"></span>
+      <div>
+        <h1>Onboarding Control Tower</h1>
+        <p class="brand-sub">Track every hotel from first contact to go-live</p>
+      </div>
+    </div>
+    <nav class="navbar">
+      <a href="index.html" class="nav-link">Hotels</a>
+      <a href="submissions.html" class="nav-link">Form Submissions</a>
+      <a href="monthly.html" class="nav-link active">Monthly Report</a>
+    </nav>
+  </div>
+</header>
+
+<main class="layout--single">
+  <section class="panel">
+    <div class="panel-header">
+      <div class="panel-header__title">
+        <h2>Monthly report notes</h2>
+        <span class="count-pill" id="note-count">0</span>
+      </div>
+      <div class="panel-header__filters">
+        <label class="filter-field">
+          <span>Month</span>
+          <input type="month" id="month-picker">
+        </label>
+        <button type="button" id="copy-report">Copy for report</button>
+      </div>
+    </div>
+    <p class="upload-hint">
+      SITA-code changes and name changes made on the Hotels page land here automatically for the
+      current month. Add rebrandings, onboardings and any other updates by hand below.
+    </p>
+    <p id="copy-status" class="import-status"></p>
+  </section>
+
+  <section class="panel panel--form mn-add">
+    <h2>Add a note</h2>
+    <form id="add-note-form">
+      <label>Type
+        <select id="note-kind"></select>
+      </label>
+      <div class="mn-fields" id="note-fields"></div>
+      <button type="submit">Add note</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <div id="notes-body" class="mn-groups"></div>
+  </section>
+</main>
+
+<script src="monthly.js"></script>
+</body>
+</html>

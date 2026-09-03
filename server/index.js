@@ -7,7 +7,7 @@ const PORT = 3000;
 
 const {EMAIL_TEMPLATES, fillTemplate} = require('./email_templates');
 const {ONBOARDING_STEPS, STEP_KEYS} = require('./steps');
-const {importSubmissions} = require('./submissions_import');
+const {importSubmissions, ensureSchema} = require('./submissions_import');
 const importStatus = require('./import_status');
 const monthlyNotes = require('./monthly_notes');
 
@@ -29,6 +29,11 @@ app.use(express.json());
 app.use(monthlyNotes.router);
 monthlyNotes.ensureTable().catch((err) => {
   console.error('[monthly-notes] could not create the monthly_notes table:', err);
+});
+
+// Migrate form_submissions' dedupe key (sita_code -> form_response_id) if needed.
+ensureSchema(pool).catch((err) => {
+  console.error('[submissions] schema migration failed:', err);
 });
 
 // Lets the frontend render the checklist without keeping its own copy of the list
@@ -201,7 +206,7 @@ app.post('/form-submissions/upload', upload.single('file'), async (req, res) => 
     const { inserted, skipped } = await importSubmissions(pool, req.file.buffer);
     importStatus.set({ source: 'upload', ok: true, inserted, skipped });
     const message = skipped
-      ? `Imported ${inserted} rows, skipped ${skipped} without a SITA code`
+      ? `Imported ${inserted} rows, skipped ${skipped} without an Id, timestamp or SITA code`
       : `Imported ${inserted} rows`;
     res.json({ message, count: inserted, skipped });
   } catch (err) {

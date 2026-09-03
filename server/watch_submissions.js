@@ -25,7 +25,7 @@ function watchSubmissionsFile(pool, filePath, { intervalMs = 5000 } = {}) {
         importStatus.set({ source, ok: true, inserted, skipped });
         console.log(
           `[submissions] ${reason}: imported ${inserted} row(s)` +
-          (skipped ? `, skipped ${skipped} without a SITA code` : '')
+          (skipped ? `, skipped ${skipped} without an Id, timestamp or SITA code` : '')
         );
       } catch (err) {
         // Locked file (Excel open), half-written file, bad workbook — log and wait

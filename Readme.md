@@ -110,7 +110,7 @@ CREATE TABLE form_submissions (
   form_response_id INTEGER,
   completion_time TIMESTAMP,
   email VARCHAR(255),
-  sita_code VARCHAR(50) UNIQUE,
+  sita_code VARCHAR(50),
   hotel_name VARCHAR(255),
   hotel_short_name VARCHAR(255),
   general_manager VARCHAR(255),
@@ -140,7 +140,9 @@ CREATE TABLE form_submissions (
 );
 ```
 
-> Note: `sita_code` has a `UNIQUE` constraint — re-uploading a file with the same SITA code updates that hotel's row instead of duplicating it. `star_rating` is `TEXT` (not a short `VARCHAR`) because real submissions sometimes contain full sentences instead of a simple rating.
+> Note: the dedupe key is a `UNIQUE` constraint on `(form_response_id, completion_time)`, **not** `sita_code` — so one hotel can have several submissions (e.g. someone re-fills the form to add missing info) and they're kept as separate rows, while re-uploading the cumulative export just updates the rows it already has instead of duplicating them. (`form_response_id` alone isn't unique: Microsoft Forms numbers responses per form, so two different exports both contain an "Id" 1, 2, 3… — pairing it with the timestamp makes the key safe.) Rows missing the `Id`, the completion timestamp, or a SITA code are skipped on import. `star_rating` is `TEXT` (not a short `VARCHAR`) because real submissions sometimes contain full sentences instead of a simple rating.
+>
+> The server adds this constraint (and drops the old `UNIQUE` on `sita_code`) on startup, so an older `form_submissions` table is migrated automatically — you don't need to touch it.
 
 There is also a `monthly_notes` table behind the **Monthly Report** page. You don't
 need to create it by hand — the server runs `CREATE TABLE IF NOT EXISTS` for it on
@@ -210,7 +212,7 @@ have the server watch the file and import it automatically.
    ```
 
 From then on the server re-imports on startup and whenever the file changes (same
-upsert-by-SITA-code logic as the manual upload). The manual **Upload** button still
+upsert-by-response-Id logic as the manual upload). The manual **Upload** button still
 works. If the file is briefly locked (Excel has it open) or mid-save, that pass is
 skipped and retried on the next change. `SUBMISSIONS_XLSX_POLL_SECONDS` controls how
 often it checks (default 5). Leave `SUBMISSIONS_XLSX_PATH` blank to disable.

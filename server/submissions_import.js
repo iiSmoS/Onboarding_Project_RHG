@@ -38,8 +38,19 @@ const COLUMN_MAP = [
 
 const DB_COLUMNS = COLUMN_MAP.map(([col]) => col);
 const PLACEHOLDERS = DB_COLUMNS.map((_, i) => `$${i + 1}`).join(',');
+
+// Rows are deduped on (form_response_id, completion_time) — one row per form
+// submission, NOT one per hotel. Two submissions for the same SITA (e.g. someone
+// re-fills the form to add missing info) are kept as two separate rows; a re-import
+// of the same export just updates the rows it already has.
+//
+// form_response_id alone is NOT unique: Microsoft Forms numbers responses 1, 2, 3…
+// *per form*, so two different form exports both contain an "Id" 18. Pairing it
+// with the submission timestamp makes the key safe.
+const CONFLICT_TARGET = '(form_response_id, completion_time)';
+const CONFLICT_KEYS = new Set(['form_response_id', 'completion_time']);
 const CONFLICT_SET = DB_COLUMNS
-  .filter((c) => c !== 'sita_code')
+  .filter((c) => !CONFLICT_KEYS.has(c))
   .map((c) => `${c} = EXCLUDED.${c}`)
   .concat('imported_at = NOW()')
   .join(',\n        ');
@@ -47,9 +58,60 @@ const CONFLICT_SET = DB_COLUMNS
 const INSERT_SQL = `
   INSERT INTO form_submissions (${DB_COLUMNS.join(', ')})
   VALUES (${PLACEHOLDERS})
-  ON CONFLICT (sita_code) DO UPDATE SET
+  ON CONFLICT ${CONFLICT_TARGET} DO UPDATE SET
         ${CONFLICT_SET}
 `;
+
+// One-off migration for databases created before the dedupe key changed from
+// UNIQUE(sita_code) to UNIQUE(form_response_id, completion_time). Safe to run on
+// every startup; a no-op once done (and if the table doesn't exist yet, see
+// README Step 3).
+async function ensureSchema(pool) {
+  await pool.query(`
+    DO $$
+    DECLARE
+      removed integer;
+    BEGIN
+      IF to_regclass('form_submissions') IS NULL THEN
+        RETURN;
+      END IF;
+
+      -- old dedupe key: drop the UNIQUE on sita_code so a hotel can have >1 submission
+      IF EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'form_submissions'::regclass
+          AND conname = 'form_submissions_sita_code_key'
+      ) THEN
+        ALTER TABLE form_submissions DROP CONSTRAINT form_submissions_sita_code_key;
+      END IF;
+
+      -- new dedupe key: UNIQUE on (form_response_id, completion_time)
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'form_submissions'::regclass
+          AND conname = 'form_submissions_submission_key'
+      ) THEN
+        -- clear any exact-duplicate submission rows first (same Forms Id AND same
+        -- timestamp = the same submission imported twice), keeping the newest.
+        WITH dups AS (
+          DELETE FROM form_submissions a
+            USING form_submissions b
+           WHERE a.form_response_id = b.form_response_id
+             AND a.completion_time = b.completion_time
+             AND a.id < b.id
+          RETURNING a.id
+        )
+        SELECT count(*) INTO removed FROM dups;
+        IF removed > 0 THEN
+          RAISE NOTICE '[submissions] migration removed % duplicate submission row(s)', removed;
+        END IF;
+
+        ALTER TABLE form_submissions
+          ADD CONSTRAINT form_submissions_submission_key UNIQUE (form_response_id, completion_time);
+      END IF;
+    END $$;
+  `);
+}
 
 // Excel headers sometimes carry stray whitespace/line breaks — trim every key so
 // lookups don't silently fail because of an invisible character mismatch.
@@ -73,8 +135,8 @@ function rowsFromWorkbook(buffer) {
 }
 
 // Parse an .xlsx buffer and upsert every row into form_submissions, keyed on
-// sita_code. One transaction — a bad row rolls the whole import back.
-// Returns { inserted, skipped }.
+// (form_response_id, completion_time). One transaction — a bad row rolls the whole
+// import back. Returns { inserted, skipped }.
 async function importSubmissions(pool, buffer) {
   const rows = rowsFromWorkbook(buffer);
   const client = await pool.connect();
@@ -84,8 +146,12 @@ async function importSubmissions(pool, buffer) {
     let skipped = 0;
     for (const raw of rows) {
       const row = normalizeRow(raw);
-      if (!row['SITA code']) {
-        skipped++; // no conflict key -> can't be deduped, skip it
+      // The dedupe key is (Id, Completion time) — without both, a re-import would
+      // duplicate the row. A SITA code is required for the row to be usable at all.
+      const missingKey = row['Id'] === undefined || row['Id'] === null || row['Id'] === ''
+        || row['Completion time'] === undefined || row['Completion time'] === null || row['Completion time'] === '';
+      if (missingKey || !row['SITA code']) {
+        skipped++;
         continue;
       }
       await client.query(INSERT_SQL, COLUMN_MAP.map(([, header]) => row[header]));
@@ -105,4 +171,4 @@ function importSubmissionsFromFile(pool, filePath) {
   return importSubmissions(pool, fs.readFileSync(filePath));
 }
 
-module.exports = { importSubmissions, importSubmissionsFromFile };
+module.exports = { importSubmissions, importSubmissionsFromFile, ensureSchema };

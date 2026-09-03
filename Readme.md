@@ -177,7 +177,16 @@ DB_NAME=hotel_onboarding
 # Optional — auto-import of the onboarding-form responses (see below)
 SUBMISSIONS_XLSX_PATH=
 SUBMISSIONS_XLSX_POLL_SECONDS=5
+
+# Optional — network interface to bind to. Defaults to 127.0.0.1 (loopback only),
+# so the app is NOT reachable from the rest of the network. Only set this to
+# 0.0.0.0 if you deliberately want LAN access, and add authentication first.
+HOST=127.0.0.1
 ```
+
+> The app has no login. It binds to `127.0.0.1` by default for that reason — keep it
+> that way on a shared or corporate network. See the security notes at the bottom of
+> this file.
 
 ### Step 5: Run the app
 ```bash
@@ -295,6 +304,23 @@ hotel-onboarding-app/
 
 ---
 
+## Security notes
+
+This is a single-user internal tool with **no login**. That's fine as long as it's
+only reachable from your own machine. Specifically:
+
+- **It binds to `127.0.0.1` by default** — nothing on the network can reach it.
+  Don't change `HOST` to `0.0.0.0` on a shared or corporate network without putting
+  authentication in front of it first.
+- **`helmet`** sets security headers, including a Content-Security-Policy that only
+  allows same-origin scripts (plus Google Fonts for styling). If you add a new CDN
+  script or stylesheet, update the CSP in `server/index.js`.
+- **Generated emails escape hotel/GM values** before rendering, so imported data
+  can't inject markup into the preview.
+- **The `.xlsx` upload** parses whatever file you give it. Only upload exports you
+  trust, and keep the SheetJS library current (`npm install https://cdn.sheetjs.com/xlsx-latest/xlsx-latest.tgz`).
+- Run **`npm audit`** now and then; `npm audit fix` for anything that has a fix.
+
 ## A note on corporate/work laptops
 
-If you're working on a company laptop, keep the project folder **outside** any auto-synced location (OneDrive, SharePoint, etc.). Syncing `node_modules` can trigger security scanners due to third-party README files bundled inside dependencies. Also check your company's acceptable use policy regarding personal projects on work devices.
+If you're working on a company laptop, keep the project folder **outside** any auto-synced location (OneDrive, SharePoint, etc.). Syncing `node_modules` can trigger security scanners due to third-party README files bundled inside dependencies. Also check your company's acceptable use policy regarding personal projects on work devices — running a local server and database on a managed device may not be allowed.

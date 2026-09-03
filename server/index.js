@@ -1,9 +1,14 @@
 const express = require('express');
 const multer = require('multer');
+const helmet = require('helmet');
 
 const pool = require('./db');
 const app = express();
 const PORT = 3000;
+// Loopback only by default so the app is never exposed on the (corporate) network.
+// Set HOST=0.0.0.0 in .env only if you deliberately want LAN access — and then put
+// authentication in front of it first.
+const HOST = process.env.HOST || '127.0.0.1';
 
 const {EMAIL_TEMPLATES, fillTemplate} = require('./email_templates');
 const {ONBOARDING_STEPS, STEP_KEYS} = require('./steps');
@@ -20,6 +25,27 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: {fileSize: 10 * 1024 * 1024}, // 10 MB — the form exports are small
 });
+
+// Security headers. CSP is set explicitly because the pages pull fonts from Google
+// Fonts and set a couple of inline style *attributes* (the progress ring); all
+// scripts are same-origin.
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", 'https://fonts.googleapis.com'],
+      styleSrcAttr: ["'unsafe-inline'"],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:'],
+      connectSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'none'"],
+    },
+  },
+}));
 
 app.use(express.static('public'));
 app.use(express.json());
@@ -186,8 +212,8 @@ app.get('/hotels/:id/email-preview/:templateName', async (req,res) => {
     hotel.gm_name = String(hotel.gm_name).trim(); // drop any leading/trailing space from the source data
 
     res.json({
-      subject: fillTemplate(template.subject, hotel),
-      bodyHtml: fillTemplate(template.bodyHtml, hotel),
+      subject: fillTemplate(template.subject, hotel, {escape: false}), // rendered as text
+      bodyHtml: fillTemplate(template.bodyHtml, hotel), // rendered as HTML -> escape values
     });
   } catch(err){
     console.error(err);
@@ -232,8 +258,8 @@ app.get('/form-submissions', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`Server running at http://${HOST}:${PORT}`);
 });
 
 // Auto-import: if SUBMISSIONS_XLSX_PATH points at an .xlsx export of the onboarding

@@ -39,9 +39,24 @@ const EMAIL_TEMPLATES = {
     }
 }
 
-function fillTemplate(template,data){
-    return template.replace(/{{(.*?)}}/g, (match,key) => {
-        return data[key.trim()] ?? '';
+function escapeHtml(value){
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+// Substitute {{key}} placeholders with values from `data`.
+// escape=true (the default) HTML-escapes each value — always use it when the
+// result is rendered as HTML (the email body), since values like the hotel name
+// or GM name come from imported data and could otherwise inject markup/script.
+// Pass escape=false for plain-text output (the subject line).
+function fillTemplate(template, data, {escape = true} = {}){
+    return template.replace(/{{(.*?)}}/g, (match, key) => {
+        const value = data[key.trim()] ?? '';
+        return escape ? escapeHtml(value) : String(value);
     });
 }
 
